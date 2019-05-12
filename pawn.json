@@ -1,0 +1,21 @@
+{
+	"user": "PatrickGTR",
+	"repo": "mysql-prepared-stmt",
+	"entry": "main.pwn",
+	"output": "main.amx",
+	"dependencies": [
+		"sampctl/samp-stdlib",
+		"pBlueG/SA-MP-MySQL",
+		"pawn-lang/YSI-Includes@5.x"
+	],
+	"runtime": {
+		"version": "0.3.7",
+		"mode": "server",
+		"echo": "-",
+		"rcon_password": "password",
+		"port": 7777,
+		"hostname": "SA-MP Server",
+		"maxplayers": 50,
+		"language": ""
+	}
+}
