@@ -6,7 +6,7 @@
 	"dependencies": [
 		"sampctl/samp-stdlib",
 		"pBlueG/SA-MP-MySQL",
-		"pawn-lang/YSI-Includes:5.x"
+		"pawn-lang/YSI-Includes@5.x"
 	],
 	"runtime": {
 		"version": "0.3.7",

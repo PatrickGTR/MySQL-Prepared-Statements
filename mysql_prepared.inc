@@ -107,7 +107,7 @@ static stock bool:stmt_execute_inline(Statement:statement, type, Func:callback<>
 	}
 
 	// no valid connection, throw error.
-	if (!gs_Statements[statement][E_STMT_MYSQL_HANDLE]) {
+	if (mysql_errno(gs_Statements[statement][E_STMT_MYSQL_HANDLE]) != 0) {
 		Errorf("(stmt_execute_inline) Invalid Connection (%d).", _:statement);
 		return false;
 	}
@@ -152,7 +152,7 @@ static stock bool:stmt_execute(Statement:statement, type, const callback[] = "",
 	}
 
 	// no valid connection, throw error.
-	if (!gs_Statements[statement][E_STMT_MYSQL_HANDLE]) {
+	if (mysql_errno(gs_Statements[statement][E_STMT_MYSQL_HANDLE]) != 0) {
 		Errorf("(stmt_execute) Invalid Connection (%d).", _:statement);
 		return false;
 	}
@@ -344,7 +344,7 @@ static stock stmt_bind_result_field(Statement:statement, field, DataType:type, {
 	Debug("(stmt_bind_result_field:%d) Bound result field %d (type %d) to variable 0x%04x%04x.", _:statement, field, _:type, address >>> 16, address & 0xFFFF);
 }
 
-static stock Statement:stmt_prepare(MySQL:Connection, const szQuery[]) {
+static stock Statement:stmt_prepare(MySQL:handle, const szQuery[]) {
 
 	new
 		Statement:statement = INVALID_STATEMENT,
@@ -353,7 +353,7 @@ static stock Statement:stmt_prepare(MySQL:Connection, const szQuery[]) {
 		queryLength
 	;
 
-	if(Connection == INVALID_CONNECTION) {
+	if(mysql_errno(handle) != 0) {
 		Error("(stmt_prepare) Invalid Connection.");
 		return INVALID_STATEMENT;
 	}
@@ -371,7 +371,7 @@ static stock Statement:stmt_prepare(MySQL:Connection, const szQuery[]) {
 
 	// Find an empty slot in gs_Statements.
 	for (i = 0; i < sizeof(gs_Statements); i++) {
-		if (!gs_Statements[Statement:i][E_STMT_MYSQL_HANDLE]) {
+		if (gs_Statements[Statement:i][E_STMT_MYSQL_HANDLE] == INVALID_CONNECTION) {
 			statement = Statement:i;
 			break;
 		}
@@ -382,7 +382,7 @@ static stock Statement:stmt_prepare(MySQL:Connection, const szQuery[]) {
 		return INVALID_STATEMENT;
 	}
 
-	gs_Statements[statement][E_STMT_MYSQL_HANDLE] = Connection;
+	gs_Statements[statement][E_STMT_MYSQL_HANDLE] = handle;
 
 
 	// Make sure no parameters are initialized.
@@ -603,5 +603,4 @@ stock bool:MySQL_ExecuteThreaded_Inline(Statement:statement, Func:callback<>) {
 stock bool:MySQL_ExecuteParallel_Inline(Statement:statement, Func:callback<>) {
 	return stmt_execute_inline(statement, 1, callback);
 }
-
 

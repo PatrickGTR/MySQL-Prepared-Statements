@@ -4,21 +4,19 @@
 
 #include "mysql_prepared"
 
-new MySQL:sql;
+new MySQL:MySQLHandle;
 
 new
     Statement:stmt_readone,
     Statement:stmt_readloop;
 
-
-
 main() {
 
-    sql = mysql_connect("localhost", "root", "", "cnr");
+    MySQLHandle = mysql_connect("localhost", "root", "", "cnr");
 
     mysql_log(ALL);
 
-    new Statement: stmt_insert = MySQL_PrepareStatement(sql, "INSERT INTO accounts(username, password, salt, money, kills, deaths) VALUES (?,?,?,?,?,?) " );
+    new Statement: stmt_insert = MySQL_PrepareStatement(MySQLHandle, "INSERT INTO accounts(username, password, salt, money, kills, deaths) VALUES (?,?,?,?,?,?) " );
 
     // Arrow values in questions (first 0, second is 1, etc ...)
     MySQL_Bind(stmt_insert, 0 , "patrickgtr");
@@ -31,8 +29,8 @@ main() {
     MySQL_ExecuteParallel(stmt_insert);
     MySQL_StatementClose(stmt_insert);
 
-    stmt_readone = MySQL_PrepareStatement(sql, "SELECT username, password, salt, money, kills, deaths FROM accounts where username = ?");
-    stmt_readloop = MySQL_PrepareStatement(sql, "SELECT * FROM spawns");
+    stmt_readone = MySQL_PrepareStatement(MySQLHandle, "SELECT username, password, salt, money, kills, deaths FROM accounts where username = ?");
+    stmt_readloop = MySQL_PrepareStatement(MySQLHandle, "SELECT * FROM spawns");
 
     // Run Threaded on statement
     inline OnSpawnsLoad() {
@@ -70,9 +68,9 @@ public Emulate_OnPlayerConnect(playerid) {
 forward OnPlayerLoad(playerid,const fmat[], Float:pos);
 public OnPlayerLoad(playerid, const fmat[], Float:pos)
 {
-    printf("OPL, playerid: %i", playerid);
-    printf("OPL, fmat: %s", fmat);
-    printf("OPL, pos: %.4f", pos);
+    printf("OnPlayerLoad, playerid: %i", playerid);
+    printf("OnPlayerLoad, fmat: %s", fmat);
+    printf("OnPlayerLoad, pos: %.4f", pos);
 
     new
         playerUsername[MAX_PLAYER_NAME],
