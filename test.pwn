@@ -7,8 +7,7 @@
 new MySQL:MySQLHandle;
 
 new
-    Statement:stmt_readone,
-    Statement:stmt_readloop;
+    Statement:stmt_readone;
 
 main() {
 
@@ -30,7 +29,9 @@ main() {
     MySQL_StatementClose(stmt_insert);
 
     stmt_readone = MySQL_PrepareStatement(MySQLHandle, "SELECT username, password, salt, money, kills, deaths FROM accounts where username = ?");
-    stmt_readloop = MySQL_PrepareStatement(MySQLHandle, "SELECT * FROM spawns");
+
+
+    new Statement:stmt_readloop = MySQL_PrepareStatement(MySQLHandle, "SELECT * FROM spawns");
 
     // Run Threaded on statement
     inline OnSpawnsLoad() {

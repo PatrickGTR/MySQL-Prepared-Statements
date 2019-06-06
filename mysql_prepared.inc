@@ -31,7 +31,12 @@ enum DataType {
 	TYPE_RAW_STRING,
 };
 
-static enum E_statement {
+static enum QueryType {
+	TYPE_THREADED,
+	TYPE_PARALLEL
+}
+
+static enum E_STMT_MYSQL {
 	// The ready-to-run query.
 	E_STMT_MYSQL_QUERY[MAX_STATEMENT_SIZE + 1],
 
@@ -66,10 +71,10 @@ static enum E_statement {
 };
 static stock
 	gs_szBuffer[8192],
-	gs_Statements[Statement:MAX_STATEMENTS][E_statement];
+	gs_Statements[Statement:MAX_STATEMENTS][E_STMT_MYSQL];
 
 // --
-//  Internal, Deprecated Function Names
+//  Internally used, Deprecated Function Names
 // --
 static escape_string(szString[], const szEnclosing[] = "'", argSize = sizeof(szString)) {
 	new
@@ -83,30 +88,28 @@ static escape_string(szString[], const szEnclosing[] = "'", argSize = sizeof(szS
 	}
 }
 
-static stock stmt_close(Statement:statement){
-	//no valid statement, throw error.
+static stock stmt_close(Statement:statement) {
+
 	if (statement == INVALID_STATEMENT || !(0 <= _:statement < sizeof(gs_Statements))) {
 		Errorf("(stmt_close) Invalid Statement (%d).", _:statement);
 
 		return false;
 	}
-
 	Debug("(stmt_close:%d) Statament closed.", _:statement);
 
-	// reset
+	// reset data.
 	gs_Statements[statement][E_STMT_MYSQL_HANDLE] = INVALID_CONNECTION;
 	statement = INVALID_STATEMENT;
 	return true;
 }
 
-static stock bool:stmt_execute_inline(Statement:statement, type, Func:callback<>) {
-	//no valid statement, throw error.
+static stock bool:stmt_execute_inline(Statement:statement, QueryType:type, Func:callback<>) {
+
 	if (statement == INVALID_STATEMENT || !(0 <= _:statement < sizeof(gs_Statements))) {
 		Errorf("(stmt_execute_inline) Invalid Statement (%d).", _:statement);
 		return false;
 	}
 
-	// no valid connection, throw error.
 	if (mysql_errno(gs_Statements[statement][E_STMT_MYSQL_HANDLE]) != 0) {
 		Errorf("(stmt_execute_inline) Invalid Connection (%d).", _:statement);
 		return false;
@@ -123,35 +126,39 @@ static stock bool:stmt_execute_inline(Statement:statement, type, Func:callback<>
 	// write
 	strunpack(gs_szBuffer, gs_Statements[statement][E_STMT_MYSQL_QUERY]);
 
-	new sucess;
+	new
+		ret;
 
-	if(type == 0) {
-		sucess = mysql_tquery(gs_Statements[statement][E_STMT_MYSQL_HANDLE], gs_szBuffer, "Indirect_FromCallback", "ii", _:callback, true);
+	if(_:type == 0) {
+		ret = mysql_tquery(gs_Statements[statement][E_STMT_MYSQL_HANDLE], gs_szBuffer, "Indirect_FromCallback", "ii", _:callback, true);
 	} else {
-		sucess = mysql_pquery(gs_Statements[statement][E_STMT_MYSQL_HANDLE], gs_szBuffer, "Indirect_FromCallback", "ii", _:callback, true);
+		ret = mysql_pquery(gs_Statements[statement][E_STMT_MYSQL_HANDLE], gs_szBuffer, "Indirect_FromCallback", "ii", _:callback, true);
 	}
 
-	if(!sucess) {
+	// throw error if query failed.
+	if(!ret) {
 		Errorf("(stmt_execute_inline:%d) failed to execute the query", _:statement);
 		return false;
+	} else {
+		// tell the memory to stay
+		Indirect_Claim(callback);
 	}
 
-	Indirect_Claim(callback);
 	Debug("(stmt_execute_inline:%d) Statement executed.", _:statement);
+
 	#if DEBUG
 		printf("Query executed [%s]", gs_szBuffer);
 	#endif
-	return bool:sucess;
+	return bool:ret;
 }
 
-static stock bool:stmt_execute(Statement:statement, type, const callback[] = "", const fmat[] = "", {Float,_}:...) {
-	//no valid statement, throw error.
+static stock bool:stmt_execute(Statement:statement, QueryType:type, const callback[] = "", const fmat[] = "", {Float,_}:...) {
+
 	if (statement == INVALID_STATEMENT || !(0 <= _:statement < sizeof(gs_Statements))) {
 		Errorf("(stmt_execute) Invalid Statement (%d).", _:statement);
 		return false;
 	}
 
-	// no valid connection, throw error.
 	if (mysql_errno(gs_Statements[statement][E_STMT_MYSQL_HANDLE]) != 0) {
 		Errorf("(stmt_execute) Invalid Connection (%d).", _:statement);
 		return false;
@@ -168,18 +175,20 @@ static stock bool:stmt_execute(Statement:statement, type, const callback[] = "",
 	// write
 	strunpack(gs_szBuffer, gs_Statements[statement][E_STMT_MYSQL_QUERY]);
 
-	new sucess = type ? mysql_tquery(gs_Statements[statement][E_STMT_MYSQL_HANDLE], gs_szBuffer, callback, fmat, ___(4)) : mysql_pquery(gs_Statements[statement][E_STMT_MYSQL_HANDLE], gs_szBuffer, callback, fmat, ___(4));
+	new ret = type ? mysql_tquery(gs_Statements[statement][E_STMT_MYSQL_HANDLE], gs_szBuffer, callback, fmat, ___(4)) : mysql_pquery(gs_Statements[statement][E_STMT_MYSQL_HANDLE], gs_szBuffer, callback, fmat, ___(4));
 
-	if(!sucess) {
+	// throw error if query failed.
+	if(!ret) {
 		Errorf("(stmt_execute:%d) failed to execute the query", _:statement);
 		return false;
 	}
 
 	Debug("(stmt_execute:%d) Statement executed.", _:statement);
+
 	#if DEBUG
 		printf("Query executed [%s]", gs_szBuffer);
 	#endif
-	return bool:sucess;
+	return bool:ret;
 }
 
 static stock bool:stmt_bind_value(&Statement:statement, param, DataType:type, {Float,_}:...)
@@ -187,8 +196,7 @@ static stock bool:stmt_bind_value(&Statement:statement, param, DataType:type, {F
 
 	new
 		lengthDifference,
-		queryLength
-	;
+		queryLength;
 
 	if (statement == INVALID_STATEMENT || !(0 <= _:statement < sizeof(gs_Statements))) {
 		Warningf("(stmt_bind_value) Invalid statement (%d).", _:statement);
@@ -266,15 +274,14 @@ static stock bool:stmt_bind_value(&Statement:statement, param, DataType:type, {F
 	strins(gs_Statements[statement][E_STMT_MYSQL_QUERY], gs_szBuffer, gs_Statements[statement][E_STMT_MYSQL_PARAM_POS][param], MAX_STATEMENT_SIZE);
 
 	#if DEBUG
-	if (ispacked(gs_szBuffer))
-		strunpack(gs_szBuffer, gs_szBuffer);
-
-	Debug("(stmt_bind_value:%d) New parameter entered for %d in %d: %s", _:statement, param, gs_Statements[statement][E_STMT_MYSQL_PARAM_POS][param], gs_szBuffer);
+		if (ispacked(gs_szBuffer)) {
+			strunpack(gs_szBuffer, gs_szBuffer);
+		}
+		Debug("(stmt_bind_value:%d) New parameter entered for %d in %d: %s", _:statement, param, gs_Statements[statement][E_STMT_MYSQL_PARAM_POS][param], gs_szBuffer);
 	#endif
 
 	gs_Statements[statement][E_STMT_MYSQL_PARAM_LEN][param] = queryLength;
 	gs_Statements[statement][E_STMT_MYSQL_PARAM_TYPE][param] = type;
-
 	return true;
 }
 
@@ -410,10 +417,10 @@ static stock Statement:stmt_prepare(MySQL:handle, const szQuery[]) {
 	gs_Statements[statement][E_STMT_COUNT_ROW_FIRST] = true;
 
 	if (ispacked(szQuery)) {
-	#if DEBUG
-		strunpack(gs_szBuffer, szQuery);
-		Debug("(stmt_prepare:%d) Preparing statement with %d parameters: %s", _:statement, i, gs_szBuffer);
-	#endif
+		#if DEBUG
+			strunpack(gs_szBuffer, szQuery);
+			Debug("(stmt_prepare:%d) Preparing statement with %d parameters: %s", _:statement, i, gs_szBuffer);
+		#endif
 		strcat(gs_Statements[statement][E_STMT_MYSQL_QUERY], szQuery, MAX_STATEMENT_SIZE);
 	} else {
 		Debug("(stmt_prepare:%d) Preparing statement with %d parameters: %s", _:statement, i, szQuery);
@@ -445,14 +452,15 @@ static stock bool:stmt_fetch_row(Statement:statement) {
 		count,
 		rows;
 
-
+	// count the row if this is the first time we called stmt_fetch_row
+	// this avoids unlimited loop if stmt_fetch_row is used inside while loop
 	if(gs_Statements[statement][E_STMT_COUNT_ROW_FIRST]) {
 		cache_get_row_count(rows);
 		gs_Statements[statement][E_STMT_MYSQL_TOTAL_ROWS] = rows;
 		gs_Statements[statement][E_STMT_COUNT_ROW_FIRST] = false;
 
 		// why not be fussy, singular or plural
-		Debug("(stmt_fetch_row:%i) Counted %i row%s", _:statement, rows, rows > 1 ? ("s") : (""));
+		Debug("(stmt_fetch_row:%i) Counted %i %s", _:statement, rows, (rows > 1 ? "rows" : "row"));
 	}
 
 	cache_get_field_count(fields);
@@ -462,19 +470,22 @@ static stock bool:stmt_fetch_row(Statement:statement) {
 		fields = MAX_FIELDS;
 	}
 
+	// if no more rows to recover, we stop the loop if used in loop
 	if(!stmt_rows_left(statement)) {
 		Debug("(stmt_fetch_row) No rows left.");
-		return false; // if no more rows to recover, we stop the loop if used in loop
+		return false;
 	}
 
-	rows = gs_Statements[statement][E_STMT_MYSQL_TOTAL_ROWS]; // assign the global total rows to rows.
-	gs_Statements[statement][E_STMT_MYSQL_TOTAL_ROWS] --; 	// decrement total rows.
+	// assign the global total rows to rows.
+	// decrement total rows.
+	rows = gs_Statements[statement][E_STMT_MYSQL_TOTAL_ROWS];
+	gs_Statements[statement][E_STMT_MYSQL_TOTAL_ROWS] --;
 
 	for (new field = 0; field < fields; field++) {
 		if (gs_Statements[statement][E_STMT_MYSQL_FIELD_TYPE][field] == TYPE_NONE)
 			continue;
 
-		count++;
+		count ++;
 
 		switch (gs_Statements[statement][E_STMT_MYSQL_FIELD_TYPE][field]) {
 			case TYPE_NONE,
@@ -485,8 +496,8 @@ static stock bool:stmt_fetch_row(Statement:statement) {
 				TYPE_FLOAT: {
 
 				if(rows > 1) {
-					for(new _loop_rows = 0; _loop_rows < rows; _loop_rows++) {
-						cache_get_value_index(_loop_rows, field, gs_szBuffer, sizeof(gs_szBuffer) - 1);
+					for(new num_rows = 0; num_rows < rows; num_rows++) {
+						cache_get_value_index(num_rows, field, gs_szBuffer, sizeof(gs_szBuffer) - 1);
 					}
 				} else {
 					cache_get_value_index(0, field, gs_szBuffer, sizeof(gs_szBuffer) - 1);
@@ -511,11 +522,11 @@ static stock bool:stmt_fetch_row(Statement:statement) {
 				address  = gs_Statements[statement][E_STMT_MYSQL_FIELD_ADDRESS][field];
 				argSize     = gs_Statements[statement][E_STMT_MYSQL_FIELD_SIZE][field];
 
-				#emit PUSH.S    argSize //push address of variable argSize
-				#emit PUSH.S    address //push address of variable address
-				#emit PUSH.S    field //push address of variable field
-				#emit PUSH.C    0 //retrieve first row
-				#emit PUSH.C    16
+				#emit PUSH.S    argSize // push address of variable argSize
+				#emit PUSH.S    address // push address of variable address
+				#emit PUSH.S    field // push address of variable field
+				#emit PUSH.C    0 // retrieve first row
+				#emit PUSH.C    16 // bytes passed to cache_get_value_index
 				#emit SYSREQ.C  cache_get_value_index // call cache_get_value_index
 				#emit STACK     20 //move stack to 20
 
@@ -525,7 +536,7 @@ static stock bool:stmt_fetch_row(Statement:statement) {
 				#emit PUSH.C     sc_szFormatString //(%s into variable)
 				#emit PUSH.S     argSize //push address of variable argSize
 				#emit PUSH.S     address //push address of variable address
-				#emit PUSH.C     16
+				#emit PUSH.C     16 // bytes passed to format
 				#emit SYSREQ.C   format //call format
 				#emit STACK      20 //move stack to 20
 			}
@@ -588,19 +599,23 @@ stock MySQL_BindResultFloat(Statement:statement, field, &Float:result) {
 	stmt_bind_result_field(statement, field, TYPE_FLOAT, result);
 }
 
+// --
+// Executing
+// --
+
 stock bool:MySQL_ExecuteThreaded(Statement:statement, const callback[] = "", const fmat[] = "", {Float,_}:...) {
-	return stmt_execute(statement, 0, callback, fmat, ___(3));
+	return stmt_execute(statement, TYPE_THREADED, callback, fmat, ___(3));
 }
 
 stock bool:MySQL_ExecuteParallel(Statement:statement, const callback[] = "", const fmat[] = "", {Float,_}:...) {
-	return stmt_execute(statement, 1, callback, fmat, ___(3));
+	return stmt_execute(statement, TYPE_PARALLEL, callback, fmat, ___(3));
 }
 
 stock bool:MySQL_ExecuteThreaded_Inline(Statement:statement, Func:callback<>) {
-	return stmt_execute_inline(statement, 0, callback);
+	return stmt_execute_inline(statement, TYPE_THREADED, callback);
 }
 
 stock bool:MySQL_ExecuteParallel_Inline(Statement:statement, Func:callback<>) {
-	return stmt_execute_inline(statement, 1, callback);
+	return stmt_execute_inline(statement, TYPE_PARALLEL, callback);
 }
 
