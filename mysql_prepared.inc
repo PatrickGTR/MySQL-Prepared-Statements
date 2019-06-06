@@ -1,5 +1,4 @@
 #include <YSI_Coding\y_va>
-#include <YSI_Coding\y_inline>
 
 #define MAX_PARAMS  		(32)
 #define MAX_FIELD_NAME  	(66)
@@ -103,54 +102,56 @@ static stock stmt_close(Statement:statement) {
 	return true;
 }
 
-static stock bool:stmt_execute_inline(Statement:statement, QueryType:type, Func:callback<>) {
+#if defined _INC_y_inline
+	static stock bool:stmt_execute_inline(Statement:statement, QueryType:type, Func:callback<>) {
 
-	if (statement == INVALID_STATEMENT || !(0 <= _:statement < sizeof(gs_Statements))) {
-		Errorf("(stmt_execute_inline) Invalid Statement (%d).", _:statement);
-		return false;
-	}
-
-	if (mysql_errno(gs_Statements[statement][E_STMT_MYSQL_HANDLE]) != 0) {
-		Errorf("(stmt_execute_inline) Invalid Connection (%d).", _:statement);
-		return false;
-	}
-
-	// Make sure all parameters have been set.
-	for (new i = 0; i < gs_Statements[statement][E_STMT_MYSQL_PARAM_COUNT]; i++) {
-		if (gs_Statements[statement][E_STMT_MYSQL_PARAM_TYPE][i] == TYPE_NONE) {
-			Errorf("(stmt_execute_inline) Parameter (%d) not started in statement", i);
+		if (statement == INVALID_STATEMENT || !(0 <= _:statement < sizeof(gs_Statements))) {
+			Errorf("(stmt_execute_inline) Invalid Statement (%d).", _:statement);
 			return false;
 		}
+
+		if (mysql_errno(gs_Statements[statement][E_STMT_MYSQL_HANDLE]) != 0) {
+			Errorf("(stmt_execute_inline) Invalid Connection (%d).", _:statement);
+			return false;
+		}
+
+		// Make sure all parameters have been set.
+		for (new i = 0; i < gs_Statements[statement][E_STMT_MYSQL_PARAM_COUNT]; i++) {
+			if (gs_Statements[statement][E_STMT_MYSQL_PARAM_TYPE][i] == TYPE_NONE) {
+				Errorf("(stmt_execute_inline) Parameter (%d) not started in statement", i);
+				return false;
+			}
+		}
+
+		// write
+		strunpack(gs_szBuffer, gs_Statements[statement][E_STMT_MYSQL_QUERY]);
+
+		new
+			ret;
+
+		if(_:type == 0) {
+			ret = mysql_tquery(gs_Statements[statement][E_STMT_MYSQL_HANDLE], gs_szBuffer, "Indirect_FromCallback", "ii", _:callback, true);
+		} else {
+			ret = mysql_pquery(gs_Statements[statement][E_STMT_MYSQL_HANDLE], gs_szBuffer, "Indirect_FromCallback", "ii", _:callback, true);
+		}
+
+		// throw error if query failed.
+		if(!ret) {
+			Errorf("(stmt_execute_inline:%d) failed to execute the query", _:statement);
+			return false;
+		} else {
+			// tell the memory to stay
+			Indirect_Claim(callback);
+		}
+
+		Debug("(stmt_execute_inline:%d) Statement executed.", _:statement);
+
+		#if DEBUG
+			printf("Query executed [%s]", gs_szBuffer);
+		#endif
+		return bool:ret;
 	}
-
-	// write
-	strunpack(gs_szBuffer, gs_Statements[statement][E_STMT_MYSQL_QUERY]);
-
-	new
-		ret;
-
-	if(_:type == 0) {
-		ret = mysql_tquery(gs_Statements[statement][E_STMT_MYSQL_HANDLE], gs_szBuffer, "Indirect_FromCallback", "ii", _:callback, true);
-	} else {
-		ret = mysql_pquery(gs_Statements[statement][E_STMT_MYSQL_HANDLE], gs_szBuffer, "Indirect_FromCallback", "ii", _:callback, true);
-	}
-
-	// throw error if query failed.
-	if(!ret) {
-		Errorf("(stmt_execute_inline:%d) failed to execute the query", _:statement);
-		return false;
-	} else {
-		// tell the memory to stay
-		Indirect_Claim(callback);
-	}
-
-	Debug("(stmt_execute_inline:%d) Statement executed.", _:statement);
-
-	#if DEBUG
-		printf("Query executed [%s]", gs_szBuffer);
-	#endif
-	return bool:ret;
-}
+#endif
 
 static stock bool:stmt_execute(Statement:statement, QueryType:type, const callback[] = "", const fmat[] = "", {Float,_}:...) {
 
@@ -611,11 +612,13 @@ stock bool:MySQL_ExecuteParallel(Statement:statement, const callback[] = "", con
 	return stmt_execute(statement, TYPE_PARALLEL, callback, fmat, ___(3));
 }
 
-stock bool:MySQL_ExecuteThreaded_Inline(Statement:statement, Func:callback<>) {
-	return stmt_execute_inline(statement, TYPE_THREADED, callback);
-}
+#if defined _INC_y_inline
+	stock bool:MySQL_ExecuteThreaded_Inline(Statement:statement, Func:callback<>) {
+		return stmt_execute_inline(statement, TYPE_THREADED, callback);
+	}
 
-stock bool:MySQL_ExecuteParallel_Inline(Statement:statement, Func:callback<>) {
-	return stmt_execute_inline(statement, TYPE_PARALLEL, callback);
-}
+	stock bool:MySQL_ExecuteParallel_Inline(Statement:statement, Func:callback<>) {
+		return stmt_execute_inline(statement, TYPE_PARALLEL, callback);
+	}
+#endif
 

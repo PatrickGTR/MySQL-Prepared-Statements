@@ -2,6 +2,8 @@
 
 #include <a_mysql>
 
+#include <YSI_Coding\y_inline>
+
 #include "mysql_prepared"
 
 new MySQL:MySQLHandle;
