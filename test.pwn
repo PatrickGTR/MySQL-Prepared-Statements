@@ -2,7 +2,7 @@
 
 #include <a_mysql>
 
-#include "MySQL-Stataments/Statament.inc"
+#include "Statament"
 
 new MySQL:sql;
 

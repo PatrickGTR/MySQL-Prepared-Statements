@@ -37,7 +37,7 @@ sampctl package install PatrickGTR/mysql-prepared-stmt
 Include in your code and begin using the library:
 
 ```pawn
-#include <mysql-prepared-stmt>
+#include <mysql_prepared>
 ```
 
 ## Usage
