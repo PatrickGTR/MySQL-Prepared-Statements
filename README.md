@@ -27,6 +27,7 @@ Happy Pawning!
 -->
 
 ## Special Thanks to:
+* **Slice** - SQLite Improved! Took the base of the code.
 * **maddinat0r** - MySQL
 * **Southclaws** - sampctl
 * **JustMichael** - constructive discussion on Discord
