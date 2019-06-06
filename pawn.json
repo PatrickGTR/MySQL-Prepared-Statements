@@ -1,12 +1,12 @@
 {
 	"user": "PatrickGTR",
 	"repo": "mysql-prepared-stmt",
-	"entry": "main.pwn",
-	"output": "main.amx",
+	"entry": "test.pwn",
+	"output": "test.amx",
 	"dependencies": [
 		"sampctl/samp-stdlib",
 		"pBlueG/SA-MP-MySQL",
-		"pawn-lang/YSI-Includes@5.x"
+		"pawn-lang/YSI-Includes:5.x"
 	],
 	"runtime": {
 		"version": "0.3.7",
@@ -16,6 +16,35 @@
 		"port": 7777,
 		"hostname": "SA-MP Server",
 		"maxplayers": 50,
-		"language": ""
+		"language": "",
+		"mapname": "San Andreas",
+		"weburl": "www.sa-mp.com",
+		"gamemodetext": "Unknown",
+		"announce": true,
+		"lanmode": false,
+		"query": true,
+		"rcon": false,
+		"logqueries": false,
+		"sleep": 5,
+		"maxnpc": 0,
+		"stream_rate": 1000,
+		"stream_distance": 200,
+		"onfoot_rate": 30,
+		"incar_rate": 30,
+		"weapon_rate": 30,
+		"chatlogging": true,
+		"timestamp": true,
+		"messageholelimit": 3000,
+		"messageslimit": 500,
+		"ackslimit": 3000,
+		"playertimeout": 10000,
+		"minconnectiontime": 0,
+		"lagcompmode": 1,
+		"connseedtime": 300000,
+		"db_logging": false,
+		"db_log_queries": false,
+		"conncookies": true,
+		"cookielogging": false,
+		"output": true
 	}
 }
