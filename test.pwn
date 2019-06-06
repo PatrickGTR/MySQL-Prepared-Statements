@@ -2,7 +2,7 @@
 
 #include <a_mysql>
 
-#include "Statament"
+#include "mysql_prepared"
 
 new MySQL:sql;
 
@@ -35,30 +35,28 @@ main() {
     stmt_readloop = MySQL_PrepareStatement(sql, "SELECT * FROM spawns");
 
     // Run Threaded on statement
-    MySQL_ExecuteThreaded(stmt_readloop, "OnSpawnsLoad");
-
-    SetTimerEx("Emulate_OnPlayerConnect", 2000, false, "i", 0);
-}
-
-forward OnSpawnsLoad();
-public OnSpawnsLoad() {
-    new
+    inline OnSpawnsLoad() {
+        new
         spawnID,
         Float:spawnX,
         Float:spawnY,
         Float:spawnZ,
         Float:spawnA;
 
-    MySQL_BindResultInt(stmt_readloop, 0, spawnID);
-    MySQL_BindResultFloat(stmt_readloop, 1, spawnX);
-    MySQL_BindResultFloat(stmt_readloop, 2, spawnY);
-    MySQL_BindResultFloat(stmt_readloop, 3, spawnZ);
-    MySQL_BindResultFloat(stmt_readloop, 4, spawnA);
+        MySQL_BindResultInt(stmt_readloop, 0, spawnID);
+        MySQL_BindResultFloat(stmt_readloop, 1, spawnX);
+        MySQL_BindResultFloat(stmt_readloop, 2, spawnY);
+        MySQL_BindResultFloat(stmt_readloop, 3, spawnZ);
+        MySQL_BindResultFloat(stmt_readloop, 4, spawnA);
 
-    while(stmt_fetch_row(stmt_readloop)) {
-        printf("%i, %.3f, %.3f, %.3f", spawnID, spawnX, spawnY, spawnZ, spawnA);
+        while(MySQL_Statement_FetchRow(stmt_readloop)) {
+            printf("%i, %.3f, %.3f, %.3f", spawnID, spawnX, spawnY, spawnZ, spawnA);
+        }
+        MySQL_StatementClose(stmt_readloop);
     }
-    MySQL_StatementClose(stmt_readloop);
+    MySQL_ExecuteThreaded_Inline(stmt_readloop, using inline OnSpawnsLoad);
+
+    SetTimerEx("Emulate_OnPlayerConnect", 2000, false, "i", 0);
 }
 
 forward Emulate_OnPlayerConnect(playerid);
@@ -92,7 +90,7 @@ public OnPlayerLoad(playerid, const fmat[], Float:pos)
     MySQL_BindResultInt(stmt_readone, 4, playerKills);
     MySQL_BindResultInt(stmt_readone, 5, playerDeaths);
 
-    if(stmt_fetch_row(stmt_readone)) {
+    if(MySQL_Statement_FetchRow(stmt_readone)) {
         printf("username %s", playerUsername);
         printf("password %s", playerPassword);
         printf("salt %s", playerSalt);
