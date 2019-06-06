@@ -9,6 +9,7 @@
 
 # Vendor directory for dependencies
 dependencies/
+.vscode/
 
 # Dependency versions lockfile
 pawn.lock
@@ -48,4 +49,3 @@ samp.ban
 #
 
 *.sublime-workspace
-*.vscode
