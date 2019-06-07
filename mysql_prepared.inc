@@ -1,10 +1,29 @@
 #include <YSI_Coding\y_va>
 
-#define MAX_PARAMS  		(32)
-#define MAX_FIELD_NAME  	(66)
-#define MAX_STATEMENTS  	(16)
-#define MAX_STATEMENT_SIZE  (1024)
-#define MAX_FIELDS  		(64)
+#if defined MYSQL_PREPARED_INC
+	#endinput
+#endif
+#define MYSQL_PREPARED_INC
+
+#if !defined MAX_PARAMS
+	#define MAX_PARAMS  		(32)
+#endif
+
+#if !defined MAX_FIELD_NAME
+	#define MAX_FIELD_NAME  	(66)
+#endif
+
+#if !defined MAX_STATEMENTS
+	#define MAX_STATEMENTS  	(16)
+#endif
+
+#if !defined MAX_STATEMENT_SIZE
+	#define MAX_STATEMENT_SIZE  (1024)
+#endif
+
+#if !defined MAX_FIELDS
+	#define MAX_FIELDS  		(64)
+#endif
 
 #define Warning(%1)   print(!"Warning: " %1)
 #define Warningf(%1)  printf("Warning: " %1)
@@ -390,7 +409,6 @@ static stock Statement:stmt_prepare(MySQL:handle, const szQuery[]) {
 		return INVALID_STATEMENT;
 	}
 
-	gs_Statements[statement][E_STMT_MYSQL_HANDLE] = handle;
 
 
 	// Make sure no parameters are initialized.
@@ -412,6 +430,7 @@ static stock Statement:stmt_prepare(MySQL:handle, const szQuery[]) {
 	}
 
 	// init values
+	gs_Statements[statement][E_STMT_MYSQL_HANDLE] = handle;
 	gs_Statements[statement][E_STMT_MYSQL_PARAM_COUNT] = i;
 	gs_Statements[statement][E_STMT_MYSQL_QUERY][0] = 0;
 	gs_Statements[statement][E_STMT_MYSQL_TOTAL_ROWS] = 0;
