@@ -76,8 +76,7 @@ static enum E_STMT_MYSQL {
 	// Addresses of bound result fields
 	E_STMT_MYSQL_FIELD_ADDRESS[MAX_FIELDS],
 
-	// How many rows were fetched from the most recent result
-	E_STMT_MYSQL_TOTAL_ROWS,
+	E_STMT_MYSQL_ROWS_FETCHED,
 
 	// Length of parameters in the query string.
 	E_STMT_MYSQL_PARAM_LEN[MAX_PARAMS],
@@ -163,6 +162,7 @@ static stock stmt_close(Statement:statement) {
 			Indirect_Claim(callback);
 		}
 
+		gs_Statements[statement][E_STMT_MYSQL_ROWS_FETCHED] = 0;
 		Debug("(stmt_execute_inline:%d) Statement executed.", _:statement);
 
 		#if DEBUG
@@ -203,6 +203,7 @@ static stock bool:stmt_execute(Statement:statement, QueryType:type, const callba
 		return false;
 	}
 
+	gs_Statements[statement][E_STMT_MYSQL_ROWS_FETCHED] = 0;
 	Debug("(stmt_execute:%d) Statement executed.", _:statement);
 
 	#if DEBUG
@@ -433,7 +434,7 @@ static stock Statement:stmt_prepare(MySQL:handle, const szQuery[]) {
 	gs_Statements[statement][E_STMT_MYSQL_HANDLE] = handle;
 	gs_Statements[statement][E_STMT_MYSQL_PARAM_COUNT] = i;
 	gs_Statements[statement][E_STMT_MYSQL_QUERY][0] = 0;
-	gs_Statements[statement][E_STMT_MYSQL_TOTAL_ROWS] = 0;
+	gs_Statements[statement][E_STMT_MYSQL_ROWS_FETCHED] = 0;
 	gs_Statements[statement][E_STMT_COUNT_ROW_FIRST] = true;
 
 	if (ispacked(szQuery)) {
@@ -456,7 +457,9 @@ static stock stmt_rows_left(&Statement:statement) {
 		Errorf("(stmt_rows_left) Invalid statement passed (%d).", _:statement);
 		return false;
 	}
-	return gs_Statements[statement][E_STMT_MYSQL_TOTAL_ROWS];
+	new rows;
+	cache_get_row_count(rows);
+	return (rows - gs_Statements[statement][E_STMT_MYSQL_ROWS_FETCHED]);
 }
 
 static stock bool:stmt_fetch_row(Statement:statement) {
@@ -472,17 +475,6 @@ static stock bool:stmt_fetch_row(Statement:statement) {
 		count,
 		rows;
 
-	// count the row if this is the first time we called stmt_fetch_row
-	// this avoids unlimited loop if stmt_fetch_row is used inside while loop
-	if(gs_Statements[statement][E_STMT_COUNT_ROW_FIRST]) {
-		cache_get_row_count(rows);
-		gs_Statements[statement][E_STMT_MYSQL_TOTAL_ROWS] = rows;
-		gs_Statements[statement][E_STMT_COUNT_ROW_FIRST] = false;
-
-		// why not be fussy, singular or plural
-		Debug("(stmt_fetch_row:%i) Counted %i %s", _:statement, rows, (rows > 1 ? "rows" : "row"));
-	}
-
 	cache_get_field_count(fields);
 
 	if (fields > MAX_FIELDS) {
@@ -490,16 +482,13 @@ static stock bool:stmt_fetch_row(Statement:statement) {
 		fields = MAX_FIELDS;
 	}
 
+	rows = stmt_rows_left(statement);
+
 	// if no more rows to recover, we stop the loop if used in loop
-	if(!stmt_rows_left(statement)) {
+	if(!rows) {
 		Debug("(stmt_fetch_row) No rows left.");
 		return false;
 	}
-
-	// assign the global total rows to rows.
-	// decrement total rows.
-	rows = gs_Statements[statement][E_STMT_MYSQL_TOTAL_ROWS];
-	gs_Statements[statement][E_STMT_MYSQL_TOTAL_ROWS] --;
 
 	for (new field = 0; field < fields; field++) {
 		if (gs_Statements[statement][E_STMT_MYSQL_FIELD_TYPE][field] == TYPE_NONE)
@@ -539,16 +528,30 @@ static stock bool:stmt_fetch_row(Statement:statement) {
 					sc_szFormatString[] = "%s"
 				;
 
-				address  = gs_Statements[statement][E_STMT_MYSQL_FIELD_ADDRESS][field];
-				argSize     = gs_Statements[statement][E_STMT_MYSQL_FIELD_SIZE][field];
+				address	= gs_Statements[statement][E_STMT_MYSQL_FIELD_ADDRESS][field];
+				argSize	= gs_Statements[statement][E_STMT_MYSQL_FIELD_SIZE][field];
 
-				#emit PUSH.S    argSize // push address of variable argSize
-				#emit PUSH.S    address // push address of variable address
-				#emit PUSH.S    field // push address of variable field
-				#emit PUSH.C    0 // retrieve first row
-				#emit PUSH.C    16 // bytes passed to cache_get_value_index
-				#emit SYSREQ.C  cache_get_value_index // call cache_get_value_index
-				#emit STACK     20 //move stack to 20
+
+				if(rows > 1) {
+					for(new num_rows = 0; num_rows < rows; num_rows++) {
+						#emit PUSH.S    argSize // push address of variable argSize
+						#emit PUSH.S    address // push address of variable address
+						#emit PUSH.S    field // push address of variable field
+						#emit PUSH.S 	num_rows // retrieve the curent value of num_rows
+						#emit PUSH.C    16 // bytes passed to cache_get_value_index
+						#emit SYSREQ.C  cache_get_value_index // call cache_get_value_index
+						#emit STACK     20 //move stack to 20
+					}
+				} else {
+					#emit PUSH.S    argSize // push address of variable argSize
+					#emit PUSH.S    address // push address of variable address
+					#emit PUSH.S    field // push address of variable field
+					#emit PUSH.C    0 // retrieve first row
+					#emit PUSH.C    16 // bytes passed to cache_get_value_index
+					#emit SYSREQ.C  cache_get_value_index // call cache_get_value_index
+					#emit STACK     20 //move stack to 20
+				}
+
 
 
 				// format(output[], len, const format[], {Float,_}:...)
@@ -563,6 +566,8 @@ static stock bool:stmt_fetch_row(Statement:statement) {
 		}
 		Debug("(stmt_fetch_row:%d) Fetched %d fields.", _:statement, count);
 	}
+
+	gs_Statements[statement][E_STMT_MYSQL_ROWS_FETCHED] ++;
 	return true;
 }
 
@@ -640,4 +645,3 @@ stock bool:MySQL_ExecuteParallel(Statement:statement, const callback[] = "", con
 		return stmt_execute_inline(statement, TYPE_PARALLEL, callback);
 	}
 #endif
-
