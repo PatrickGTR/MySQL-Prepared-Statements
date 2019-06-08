@@ -359,8 +359,7 @@ static stock stmt_bind_result_field(Statement:statement, field, DataType:type, {
 		return;
 	}
 
-	// Without this, STOR.S.pri doesn't seem to do what it should.
-	address = 0;
+	{}
 
 	#emit LOAD.S.pri 24
 	#emit STOR.S.pri address
@@ -552,7 +551,7 @@ static stock bool:stmt_fetch_row(Statement:statement) {
 					#emit STACK     20 //move stack to 20
 				}
 
-
+				{}
 
 				// format(output[], len, const format[], {Float,_}:...)
 				#emit PUSH.S     address //push address of variable address
