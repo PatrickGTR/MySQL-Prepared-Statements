@@ -97,7 +97,7 @@ static stock
 // --
 //  Internally used, Deprecated Function Names
 // --
-static escape_string(szString[], const szEnclosing[] = "'", argSize = sizeof(szString)) {
+static stock escape_string(szString[], const szEnclosing[] = "'", argSize = sizeof(szString)) {
 	new
 		iPos
 	;
