@@ -1,5 +1,9 @@
 #include <YSI_Coding\y_va>
 
+#if YSI_VERSION != 5
+    #error Please update "https://github.com/pawn-lang/YSI-Includes" to version 5.x in order to use this library
+#endif
+
 #if defined MYSQL_PREPARED_INC
 	#endinput
 #endif
