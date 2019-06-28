@@ -1,6 +1,6 @@
 
 #if !defined _INC_y_va
-    #error You need to include <YSI_Coding/y_va> before using this library.
+    #error You need to "#include <YSI_Coding/y_va>" before using this library.
 #endif
 
 #if defined MYSQL_PREPARED_INC
@@ -652,5 +652,5 @@ stock bool:MySQL_ExecuteParallel(Statement:statement, const callback[] = "", con
         return stmt_execute_inline(statement, TYPE_PARALLEL, callback);
     }
 #else
-    #error You need to include <YSI_Coding/y_va> before using this library.
+    #error You need to "#include <YSI_Coding/y_inline>" before using this library.
 #endif
