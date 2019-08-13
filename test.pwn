@@ -18,6 +18,14 @@ main() {
 
     mysql_log(ALL);
 
+    mysql_pquery(MySQLHandle, "CREATE TABLE IF NOT EXISTS accounts(\
+        username VARCHAR(24) NOT NULL, \
+        password VARCHAR(65) NOT NULL, \
+        salt VARCHAR(11) NOT NULL, \
+        money INT(11), \
+        kills, INT(11), \
+        deaths INT(11))");
+
     new Statement: stmt_insert = MySQL_PrepareStatement(MySQLHandle, "INSERT INTO accounts(username, password, salt, money, kills, deaths) VALUES (?,?,?,?,?,?) " );
 
     // Arrow values in questions (first 0, second is 1, etc ...)
