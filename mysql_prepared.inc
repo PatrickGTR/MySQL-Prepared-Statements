@@ -35,7 +35,10 @@
 #define Errorf(%1)                  printf("Error: " %1)
 
 #define Debug(%1)  	                printf("Debug: " %1)
-#define MYSQL_PREPARE_DEBUG         (true)
+
+#if !defined MYSQL_PREPARE_DEBUG
+    #define MYSQL_PREPARE_DEBUG         (false)
+#endif
 
 const
     Statement:INVALID_STATEMENT = Statement:-1,
