@@ -28,14 +28,14 @@
     #define MAX_FIELDS  		(64)
 #endif
 
-#define Warning(%1)   print(!"Warning: " %1)
-#define Warningf(%1)  printf("Warning: " %1)
+#define Warning(%1)                 print(!"Warning: " %1)
+#define Warningf(%1)                printf("Warning: " %1)
 
-#define Error(%1)     print(!"Error: " %1)
-#define Errorf(%1)    printf("Error: " %1)
+#define Error(%1)                   print(!"Error: " %1)
+#define Errorf(%1)                  printf("Error: " %1)
 
-#define Debug(%1)  	  printf("Debug: " %1)
-#define DEBUG         (true)
+#define Debug(%1)  	                printf("Debug: " %1)
+#define MYSQL_PREPARE_DEBUG         (true)
 
 const
     Statement:INVALID_STATEMENT = Statement:-1,
@@ -116,7 +116,7 @@ static stock stmt_close(Statement:statement) {
         return false;
     }
 
-    #if DEBUG
+    #if MYSQL_PREPARE_DEBUG
         Debug("(stmt_close:%d) Statament closed.", _:statement);
     #endif
 
@@ -159,7 +159,7 @@ static stock bool:stmt_execute(Statement:statement, QueryType:type, const callba
 
     gs_Statements[statement][E_STMT_MYSQL_ROWS_FETCHED] = 0;
 
-    #if DEBUG
+    #if MYSQL_PREPARE_DEBUG
         Debug("(stmt_execute:%d) Statement executed.", _:statement);
         Debug("(stmt_execute:%d) :Query executed [%s]", _:statement, gs_szBuffer);
     #endif
@@ -248,7 +248,7 @@ static stock bool:stmt_bind_value(&Statement:statement, param, DataType:type, {F
     // Insert the new parameter.
     strins(gs_Statements[statement][E_STMT_MYSQL_QUERY], gs_szBuffer, gs_Statements[statement][E_STMT_MYSQL_PARAM_POS][param], MAX_STATEMENT_SIZE);
 
-    #if DEBUG
+    #if MYSQL_PREPARE_DEBUG
         if (ispacked(gs_szBuffer)) {
             strunpack(gs_szBuffer, gs_szBuffer);
         }
@@ -322,7 +322,7 @@ static stock stmt_bind_result_field(Statement:statement, field, DataType:type, {
     gs_Statements[statement][E_STMT_MYSQL_FIELD_ADDRESS][field] = address;
     gs_Statements[statement][E_STMT_MYSQL_FIELD_SIZE][field] = argSize;
 
-    #if DEBUG
+    #if MYSQL_PREPARE_DEBUG
         Debug("(stmt_bind_result_field:%d) Bound result field %d (type %d) to variable 0x%04x%04x.", _:statement, field, _:type, address >>> 16, address & 0xFFFF);
     #endif
 }
@@ -393,13 +393,13 @@ static stock Statement:stmt_prepare(MySQL:handle, const szQuery[]) {
     gs_Statements[statement][E_STMT_COUNT_ROW_FIRST] = true;
 
     if (ispacked(szQuery)) {
-        #if DEBUG
+        #if MYSQL_PREPARE_DEBUG
             strunpack(gs_szBuffer, szQuery);
             Debug("(stmt_prepare:%d) Preparing statement with %d parameters: %s", _:statement, i, gs_szBuffer);
         #endif
         strcat(gs_Statements[statement][E_STMT_MYSQL_QUERY], szQuery, MAX_STATEMENT_SIZE);
     } else {
-        #if DEBUG
+        #if MYSQL_PREPARE_DEBUG
             Debug("(stmt_prepare:%d) Preparing statement with %d parameters: %s", _:statement, i, szQuery);
         #endif
 
@@ -443,7 +443,7 @@ static stock bool:stmt_fetch_row(Statement:statement) {
 
     // if no more rows to recover, we stop the loop if used in loop
     if(!rows) {
-        #if DEBUG
+        #if MYSQL_PREPARE_DEBUG
             Debug("(stmt_fetch_row) No rows left.");
         #endif
         return false;
@@ -523,7 +523,7 @@ static stock bool:stmt_fetch_row(Statement:statement) {
                 #emit STACK      20 //move stack to 20
             }
         }
-        #if DEBUG
+        #if MYSQL_PREPARE_DEBUG
             Debug("(stmt_fetch_row:%d) Fetched %d fields.", _:statement, count);
         #endif
     }
@@ -649,7 +649,7 @@ stock bool:MySQL_ExecuteParallel(Statement:statement, const callback[] = "", con
 
         gs_Statements[statement][E_STMT_MYSQL_ROWS_FETCHED] = 0;
 
-        #if DEBUG
+        #if MYSQL_PREPARE_DEBUG
             Debug("(stmt_execute_inline:%d) Statement executed.", _:statement);
             Debug("(stmt_execute_inline:%d) Query executed [%s]", _:statement, gs_szBuffer);
         #endif
