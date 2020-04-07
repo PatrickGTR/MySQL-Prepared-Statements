@@ -1,7 +1,5 @@
 # mysql-prepared-stmt
 
-[![sampctl](https://shields.southcla.ws/badge/sampctl-mysql--prepared--stmt-2f2f2f.svg?style=for-the-badge)](https://github.com/PatrickGTR/mysql-prepared-stmt)
-
 <!--
 Short description of your library, why it's useful, some examples, pictures or
 videos. Link to your forum release thread too.
