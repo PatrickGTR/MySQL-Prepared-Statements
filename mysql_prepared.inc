@@ -125,7 +125,6 @@ static stock stmt_close(Statement:statement) {
 
     // reset data.
     gs_Statements[statement][E_STMT_MYSQL_HANDLE] = INVALID_CONNECTION;
-    statement = INVALID_STATEMENT;
     return true;
 }
 
