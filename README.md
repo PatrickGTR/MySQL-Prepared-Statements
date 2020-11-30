@@ -38,7 +38,7 @@ Happy Pawning!
 Simply install to your project:
 
 ```bash
-sampctl package install PatrickGTR/mysql-prepared-stmt
+sampctl package install PatrickGTR/MySQL-Prepared-Statements
 ```
 
 Include in your code and begin using the library:
