@@ -1,4 +1,8 @@
-# mysql-prepared-stmt
+<p align="center">
+    <img src="https://i.imgur.com/vlVFR7j.png" width="256"  />
+</p>
+
+
 
 <!--
 Short description of your library, why it's useful, some examples, pictures or
@@ -23,15 +27,6 @@ And finally, maintaining your version number`:
 
 Happy Pawning!
 -->
-
-## Special Thanks to:
-* **Slice** - SQLite Improved! Took the base of the code.
-* **maddinat0r** - MySQL
-* **Southclaws** - sampctl
-* **JustMichael** - constructive discussion on Discord
-* **Y_Less** - For YSI and constructive discussion on Discord
-* **Dayvison** - Initial Idea
-
 
 ## Installation
 
@@ -105,11 +100,11 @@ new stmt_readloop = MySQL_PrepareStatement(MySQLHandle, "SELECT * FROM spawns");
 // Run Threaded on statement
 inline OnSpawnsLoad() {
     new
-    spawnID,
-    Float:spawnX,
-    Float:spawnY,
-    Float:spawnZ,
-    Float:spawnA;
+        spawnID,
+        Float:spawnX,
+        Float:spawnY,
+        Float:spawnZ,
+        Float:spawnA;
 
     MySQL_BindResultInt(stmt_readloop, 0, spawnID);
     MySQL_BindResultFloat(stmt_readloop, 1, spawnX);
@@ -127,7 +122,7 @@ MySQL_ExecuteThreaded_Inline(stmt_readloop, using inline OnSpawnsLoad);
 
 ### Writing Data
 ```pawn
-new Statement: stmt_insert = MySQL_PrepareStatement(MySQLHandle, "INSERT INTO accounts(username, password, salt, money, kills, deaths) VALUES (?,?,?,?,?,?) " );
+new Statement:stmt_insert = MySQL_PrepareStatement(MySQLHandle, "INSERT INTO accounts(username, password, salt, money, kills, deaths) VALUES (?,?,?,?,?,?)");
 
 // Arrow values in questions (first 0, second is 1, etc ...)
 MySQL_Bind(stmt_insert, 0 , "patrickgtr");
@@ -140,3 +135,15 @@ MySQL_BindInt(stmt_insert, 5, 300);
 MySQL_ExecuteParallel(stmt_insert);
 MySQL_StatementClose(stmt_insert);
 ```
+
+Full account system example can be found [here](https://github.com/PatrickGTR/MySQL-Prepared-Statements/blob/master/example/account.pwn) 
+
+## Special Thanks to:
+| Username           | | 
+|----------------------|---------------------------|
+| Southclaws           | sampctl                   | 
+| Y_Less / JustMichael | YSI / Constructive feedback     |
+| Dayvison             | Initial idea              |
+| Slice                | Base code of sqlite improved | 
+| maddinat0r / BlueG                | MySQL Plugin | 
+
