@@ -538,8 +538,8 @@ stock MySQL_Statement_FetchRow(Statement:statement) {
 // --
 // Writing
 // --
-stock MySQL_Bind(Statement:statement, param, const str[]) {
-    stmt_bind_value(statement, param, TYPE_STRING, str);
+stock MySQL_Bind(Statement:statement, param, const str[], bool:isRaw = false) {
+    stmt_bind_value(statement, param, (!isRaw) ? (TYPE_STRING) : (TYPE_RAW_STRING), str);
 }
 
 stock MySQL_BindInt(Statement:statement, param, value) {
