@@ -646,3 +646,15 @@ stock bool:MySQL_ExecuteParallel(Statement:statement, const callback[] = "", con
 #else
     #error You need to "#include <YSI_Coding/y_inline>" before using this library.
 #endif
+
+
+// --
+// Removing the debugging function, lets keep it local to this include only.
+// This is to avoid any conflict with other libraries that has the following 
+// functions below e.g pawn-errors
+// --
+#undef Warning               
+#undef Warningf
+#undef Error
+#undef Errorf
+#undef Debug
