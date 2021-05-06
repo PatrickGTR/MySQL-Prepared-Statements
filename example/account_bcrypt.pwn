@@ -247,32 +247,13 @@ static Load(playerid) {
 // checks if password contains valid characters
 static Create(playerid, const password[]) {
 
-    if (!(3 <= strlen(password) <= 20)) {
-        SendClientMessage(playerid, -1, "Invalid length on the password. It should be between 3-20 characters" );
+    if (strlen(password) <= 5) {
+        SendClientMessage(playerid, -1, "Invalid length on the password. It should be more than 5 characters" );
         Account_PromptRegister(playerid);
         return;
     }
     if (isnumeric(password)) {
         SendClientMessage(playerid, -1, "Your password is invalid. The password should include alphabets.");
-        Account_PromptRegister(playerid);
-        return;
-    }
-
-    new
-        bool: ret;
-    for(new i = 0; password[i] != EOS; ++i) {
-        switch(password[i]) {
-            case '0'..'9', 'A'..'Z', 'a'..'z': {
-                ret = true;
-            }
-            default: {
-                ret = false;
-            }
-        }
-    }
-
-    if(!ret) {
-        SendClientMessage(playerid, -1, "Your password is invalid. Valid characters are: A-Z, a-z, 0-9.");
         Account_PromptRegister(playerid);
         return;
     }
