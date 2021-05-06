@@ -115,7 +115,7 @@ Account_PromptLogin(playerid, const password[]) {
         fix_password[64];
 
     strcpy(fix_password, password, sizeof(fix_password));
-    inline PromptLogin_Response(pid, dialogid, response, listitem, string:inputtext[]) {
+    inline const _response(pid, dialogid, response, listitem, string:inputtext[]) {
         #pragma unused pid, dialogid, listitem
 
         // if user does not respond, kick him.
@@ -135,7 +135,7 @@ Account_PromptLogin(playerid, const password[]) {
 
     Dialog_ShowCallback(
         playerid,
-        using inline PromptLogin_Response, // Handler
+        using inline _response,            // Handler
         DIALOG_STYLE_PASSWORD,             // Style
         "Please login...",                 // Title
         string,                            // Content
