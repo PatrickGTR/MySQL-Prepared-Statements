@@ -542,6 +542,27 @@ stock MySQL_Bind(Statement:statement, param, const str[], bool:isRaw = false) {
     stmt_bind_value(statement, param, (!isRaw) ? (TYPE_STRING) : (TYPE_RAW_STRING), str);
 }
 
+stock MySQL_BindPlayerName(Statement:statement, param, playerid) {
+    new playerName[MAX_PLAYER_NAME + 1];
+    if (!GetPlayerName(playerid, playerName, sizeof(playerName))) {
+        stmt_bind_value(statement, param, TYPE_NULL);
+    }
+    else {
+        stmt_bind_value(statement, param, TYPE_STRING, playerName);
+    }
+}
+
+stock MySQL_BindPlayerIp(Statement:statement, param, playerid)
+{
+    new playerIp[16 + 1];
+    if (GetPlayerIp(playerid, playerIp, sizeof(playerIp)) == -1) {
+        stmt_bind_value(statement, param, TYPE_NULL);
+    }
+    else {
+        stmt_bind_value(statement, param, TYPE_STRING, playerIp);
+    }
+}
+
 stock MySQL_BindInt(Statement:statement, param, value) {
     stmt_bind_value(statement, param, TYPE_INT, value);
 }
