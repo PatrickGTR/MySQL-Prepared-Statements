@@ -66,13 +66,9 @@ public OnPlayerConnect(playerid) {
             Account_PromptRegister(playerid);
         }
     }
-
-    new
-        playerName[MAX_PLAYER_NAME];
-    GetPlayerName(playerid, playerName, sizeof (playerName));
-
     // insert player name to first ? (question mark)
-    MySQL_Bind(stmt_checkPlayer, 0, playerName);
+    MySQL_BindPlayerName(stmt_checkPlayer, 0, playerid);
+    
     // execute the query.
     MySQL_ExecuteParallel_Inline(stmt_checkPlayer, using inline OnDataLoad);
     return 1;
@@ -101,15 +97,9 @@ public OnPlayerDisconnect(playerid, reason) {
 stock Account_InsertToDatabase(playerid, const hash[], const salt[]) {
     inline RegisterPlayer() {
         Player_UniqueID[playerid] = cache_insert_id();
-
         SendClientMessage(playerid, -1, "You have just registered to our server! You have been automatically logged in!");
     }
-
-    new
-        playerName[MAX_PLAYER_NAME];
-    GetPlayerName(playerid, playerName, sizeof(playerName));
-
-    MySQL_Bind(stmt_insertPlayer, 0, playerName);
+    MySQL_BindPlayerName(stmt_insertPlayer, 0, playerid);
     MySQL_Bind(stmt_insertPlayer, 1, hash);
     MySQL_Bind(stmt_insertPlayer, 2, salt);
     MySQL_ExecuteThreaded_Inline(stmt_insertPlayer, using inline RegisterPlayer);
@@ -180,7 +170,7 @@ stock Account_PromptLogin(playerid, const hash[], const salt[]) {
         playerName[MAX_PLAYER_NAME];
 
     GetPlayerName(playerid, playerName, sizeof(playerName));
-    format(string, sizeof(string), "Hello %s. Welcome back to the server!", playerid);
+    format(string, sizeof(string), "Hello %s. Welcome back to the server!", playerName);
 
     Dialog_ShowCallback(playerid,
         using inline PromptLogin_Response, // Handler
