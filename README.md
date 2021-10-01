@@ -62,6 +62,9 @@ MySQL_Statement_FetchRow(Statement:statement)
 MySQL_Bind(Statement:statement, param, const str[]) 
 MySQL_BindInt(Statement:statement, param, value)
 MySQL_BindFloat(Statement:statement, param, Float:value)
+
+MySQL_BindPlayerName(Statement:statement, param, playerid)
+MySQL_BindPlayerIp(Statement:statement, param, playerid)
 ```
 #### Reading
 ```pawn
